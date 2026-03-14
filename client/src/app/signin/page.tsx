@@ -1,6 +1,58 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+
+import { apiRequest } from "@/lib/auth-client";
+
+type AuthResponse = {
+  access_token: string;
+  user: {
+    id: number;
+    full_name: string;
+    email: string;
+  };
+};
 
 export default function SigninPage() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatusMessage("");
+    setIsSubmitting(true);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = {
+      email: String(formData.get("email") ?? "").trim(),
+      password: String(formData.get("password") ?? ""),
+    };
+
+    try {
+      const data = await apiRequest<AuthResponse>("/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      localStorage.setItem("cdp_token", data.access_token);
+      localStorage.setItem("cdp_user", JSON.stringify(data.user));
+      setStatusMessage("Welcome back. Redirecting...");
+      form.reset();
+      router.push("/dashboard");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Login failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden px-6 py-10 text-zinc-100 md:px-12">
       <div className="absolute left-0 top-12 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
@@ -31,7 +83,7 @@ export default function SigninPage() {
         </section>
 
         <section className="rounded-2xl border border-white/20 bg-zinc-950/55 p-5 shadow-xl shadow-black/25">
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={onSubmit}>
             <div>
               <label htmlFor="email" className="mb-1 block text-sm text-zinc-200">
                 Email
@@ -70,10 +122,17 @@ export default function SigninPage() {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
             >
-              Sign In
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </button>
+
+            {statusMessage && (
+              <p className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-center text-xs text-zinc-200">
+                {statusMessage}
+              </p>
+            )}
 
             <p className="text-center text-xs text-zinc-300">
               New here? <Link href="/signup" className="text-fuchsia-300">Create an account</Link>

@@ -40,7 +40,7 @@ A web/mobile platform that allows users to collaboratively select items across v
 ## Technical Highlights
 
 * **Frontend:** next.js + optional React Native or Flutter for mobile apps.
-* **Backend:** Node.js/Express or FastAPI.
+* **Backend:** FastAPI.
 * **Database:** PostgreSQL for users, sessions, friends; Redis for real-time session state.
 * **Real-Time Communication:** WebSockets or Socket.io.
 * **External APIs:** Category-specific APIs for item metadata.
