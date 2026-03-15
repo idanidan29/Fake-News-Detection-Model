@@ -11,6 +11,7 @@ type AuthResponse = {
   user: {
     id: number;
     full_name: string;
+    username: string;
     email: string;
   };
 };
@@ -29,6 +30,7 @@ export default function SignupPage() {
     const formData = new FormData(form);
     const payload = {
       full_name: String(formData.get("name") ?? "").trim(),
+      username: String(formData.get("username") ?? "").trim().toLowerCase(),
       email: String(formData.get("email") ?? "").trim(),
       password: String(formData.get("password") ?? ""),
     };
@@ -98,6 +100,22 @@ export default function SignupPage() {
                 required
                 className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-zinc-300/70 focus:border-cyan-300 focus:outline-none"
                 placeholder="Alex Morgan"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="username" className="mb-1 block text-sm text-zinc-200">
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                minLength={2}
+                maxLength={40}
+                className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-zinc-300/70 focus:border-cyan-300 focus:outline-none"
+                placeholder="alexmorgan"
               />
             </div>
 

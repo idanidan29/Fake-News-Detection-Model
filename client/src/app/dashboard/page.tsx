@@ -9,13 +9,21 @@ import { apiRequest } from "@/lib/auth-client";
 type AuthUser = {
   id: number;
   full_name: string;
+  username: string;
   email: string;
 };
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = localStorage.getItem("cdp_user");
+      return stored ? (JSON.parse(stored) as AuthUser) : null;
+    } catch {
+      return null;
+    }
+  });
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -23,22 +31,9 @@ export default function DashboardPage() {
 
     async function validateSession() {
       const token = localStorage.getItem("cdp_token");
-      const storedUser = localStorage.getItem("cdp_user");
-
       if (!token) {
         router.replace("/signin");
         return;
-      }
-
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser) as AuthUser;
-          if (isMounted) {
-            setUser(parsed);
-          }
-        } catch {
-          localStorage.removeItem("cdp_user");
-        }
       }
 
       try {
@@ -63,10 +58,6 @@ export default function DashboardPage() {
         if (isMounted) {
           setErrorMessage(message);
         }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
       }
     }
 
@@ -83,18 +74,6 @@ export default function DashboardPage() {
     router.replace("/signin");
   }
 
-  if (isLoading) {
-    return (
-      <main className="relative min-h-screen overflow-hidden px-6 py-10 text-zinc-100 md:px-12">
-        <div className="absolute left-0 top-12 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute right-0 top-24 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
-        <section className="relative mx-auto w-full max-w-5xl rounded-3xl border border-white/20 bg-white/10 p-8 text-center backdrop-blur-xl">
-          <p className="text-zinc-200">Loading your dashboard...</p>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="relative min-h-screen overflow-hidden px-6 py-10 text-zinc-100 md:px-12">
       <div className="absolute left-0 top-12 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
@@ -109,16 +88,27 @@ export default function DashboardPage() {
             <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
               Welcome{user ? `, ${user.full_name}` : ""}
             </h1>
+            <p className="mt-1 text-sm font-medium text-zinc-300/80">
+              @{user?.username ?? ""}
+            </p>
             <p className="mt-2 text-sm text-zinc-200/90">
               Your account is authenticated and ready for collaborative sessions.
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/friends"
+              className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              Friends
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              Logout
+            </button>
+          </div>
         </header>
 
         {errorMessage && (
@@ -143,7 +133,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-8 text-sm text-zinc-200">
-          <p>Signed in as: <span className="font-medium text-white">{user?.email ?? "Unknown"}</span></p>
+          <p>Signed in as: <span className="font-medium text-white">@{user?.username ?? "Unknown"}</span></p>
           <Link
             href="/"
             className="mt-4 inline-flex rounded-full border border-white/30 bg-white/10 px-4 py-2 transition hover:bg-white/20"

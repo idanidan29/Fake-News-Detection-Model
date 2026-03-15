@@ -14,13 +14,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
     normalized_email = payload.email.lower()
+    normalized_username = payload.username.lower().strip()
 
-    user_exists = db.query(User).filter(User.email == normalized_email).first()
-    if user_exists:
+    if db.query(User).filter(User.email == normalized_email).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    if db.query(User).filter(User.username == normalized_username).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken")
 
     user = User(
         full_name=payload.full_name.strip(),
+        username=normalized_username,
         email=normalized_email,
         hashed_password=hash_password(payload.password),
     )
