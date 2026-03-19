@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { apiRequest } from "@/lib/auth-client";
+import AppNavbar from "@/components/app-navbar";
 
 type AuthUser = {
   id: number;
@@ -67,19 +68,14 @@ export default function DashboardPage() {
       isMounted = false;
     };
   }, [router]);
-
-  function handleLogout() {
-    localStorage.removeItem("cdp_token");
-    localStorage.removeItem("cdp_user");
-    router.replace("/signin");
-  }
-
   return (
-    <main className="relative min-h-screen overflow-hidden px-6 py-10 text-zinc-100 md:px-12">
+    <main className="relative min-h-screen overflow-hidden px-6 py-8 text-zinc-100 md:px-12">
       <div className="absolute left-0 top-12 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="absolute right-0 top-24 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
 
-      <section className="relative mx-auto w-full max-w-5xl rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl md:p-10">
+      <AppNavbar username={user?.username} />
+
+      <section className="relative mx-auto w-full max-w-5xl rounded-[32px] border border-white/20 bg-white/10 p-6 backdrop-blur-xl md:p-10">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="inline-flex rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs tracking-[0.2em] uppercase text-zinc-200">
@@ -94,20 +90,6 @@ export default function DashboardPage() {
             <p className="mt-2 text-sm text-zinc-200/90">
               Your account is authenticated and ready for collaborative sessions.
             </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/friends"
-              className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              Friends
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              Logout
-            </button>
           </div>
         </header>
 

@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
 import { apiRequest } from "@/lib/auth-client";
+import AppNavbar from "@/components/app-navbar";
+
+const FRIENDS_CACHE_KEY = "cdp_cache_friends";
+const FRIEND_REQUESTS_CACHE_KEY = "cdp_cache_friend_requests";
 
 type Friend = {
   id: number;
@@ -15,9 +19,25 @@ type Friend = {
 
 export default function FriendsPage() {
   const router = useRouter();
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [requests, setRequests] = useState<Friend[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [username, setUsername] = useState("");
+  const [friends, setFriends] = useState<Friend[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem(FRIENDS_CACHE_KEY);
+      return cached ? (JSON.parse(cached) as Friend[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [requests, setRequests] = useState<Friend[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem(FRIEND_REQUESTS_CACHE_KEY);
+      return cached ? (JSON.parse(cached) as Friend[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [requestUsername, setRequestUsername] = useState("");
@@ -34,6 +54,17 @@ export default function FriendsPage() {
       router.replace("/signin");
       return;
     }
+
+    try {
+      const storedUser = localStorage.getItem("cdp_user");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser) as { username?: string };
+        setUsername(parsed.username ?? "");
+      }
+    } catch {
+      // Ignore bad cached user payload.
+    }
+
     try {
       const [friendsList, incomingRequests] = await Promise.all([
         apiRequest<Friend[]>("/friends", { method: "GET", headers: getAuthHeaders() }),
@@ -41,6 +72,8 @@ export default function FriendsPage() {
       ]);
       setFriends(friendsList);
       setRequests(incomingRequests);
+      localStorage.setItem(FRIENDS_CACHE_KEY, JSON.stringify(friendsList));
+      localStorage.setItem(FRIEND_REQUESTS_CACHE_KEY, JSON.stringify(incomingRequests));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load friends";
       if (msg.toLowerCase().includes("invalid token") || msg.toLowerCase().includes("user not found")) {
@@ -51,12 +84,14 @@ export default function FriendsPage() {
       }
       setErrorMessage(msg);
     } finally {
-      setIsLoading(false);
+      // Keep existing content on screen while refreshing.
     }
   }
 
   useEffect(() => {
     loadData();
+    const pollId = window.setInterval(loadData, 5000);
+    return () => window.clearInterval(pollId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -120,12 +155,13 @@ export default function FriendsPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-6 py-10 text-zinc-100 md:px-12">
+    <main className="relative min-h-screen overflow-hidden px-6 py-8 text-zinc-100 md:px-12">
       <div className="absolute left-0 top-12 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="absolute right-0 top-24 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
 
+      <AppNavbar username={username} />
+
       <section className="relative mx-auto w-full max-w-3xl space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <p className="inline-flex rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs tracking-[0.2em] uppercase text-zinc-200">
@@ -185,9 +221,7 @@ export default function FriendsPage() {
               </span>
             )}
           </h2>
-          {isLoading ? (
-            <p className="text-sm text-zinc-400">Loading…</p>
-          ) : requests.length === 0 ? (
+          {requests.length === 0 ? (
             <p className="text-sm text-zinc-400">No pending requests.</p>
           ) : (
             <ul className="space-y-3">
@@ -226,9 +260,7 @@ export default function FriendsPage() {
             Friends{" "}
             <span className="text-sm font-normal text-zinc-400">({friends.length})</span>
           </h2>
-          {isLoading ? (
-            <p className="text-sm text-zinc-400">Loading…</p>
-          ) : friends.length === 0 ? (
+          {friends.length === 0 ? (
             <p className="text-sm text-zinc-400">No friends yet. Send a request above!</p>
           ) : (
             <ul className="space-y-3">

@@ -9,7 +9,9 @@ A web/mobile platform that allows users to collaboratively select items across v
 ### 1. User Accounts & Social Networking
 
 * Account creation and authentication.
+* Username-based identity for discovery and invites.
 * Friend requests, friends list management.
+* Custom profile preferences page (global + topic-specific preferences).
 * Individual and session-based chat.
 
 ### 2. Session-Based Collaborative Selection
@@ -23,7 +25,7 @@ A web/mobile platform that allows users to collaboratively select items across v
 * Participants are shown suggested items one at a time in a Tinder-style swipe interface.
 * Each user can accept or reject items.
 * An item is confirmed when all participants accept it.
-* Matched item becomes the agreed choice for the session.
+* After a match, the group votes to either end the session or keep swiping for another match.
 
 ### 4. Real-Time Interaction
 
